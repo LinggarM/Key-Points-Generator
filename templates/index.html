@@ -61,6 +61,12 @@
             left: 0;
             top: -0.25rem;
         }
+        
+        .tab-active {
+            border-bottom: 3px solid #4F46E5;
+            color: #4F46E5;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen py-12 px-4 sm:px-6">
@@ -68,18 +74,28 @@
         <!-- Header -->
         <header class="text-center mb-12 fade-in">
             <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-3">
-                📝 Key Points Extractor
+                Key Points Extractor
             </h1>
             <p class="text-gray-600 max-w-md mx-auto">
-                Transform lengthy articles into concise, actionable insights
+                Transform articles into concise insights from URLs or text
             </p>
         </header>
 
         <!-- Main Card -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
             <div class="p-6 sm:p-8">
-                <!-- Input Section -->
-                <div class="mb-8">
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button id="textTab" class="tab-btn tab-active px-4 py-2 font-medium text-gray-600">
+                        <i class="fas fa-keyboard mr-2"></i>Paste Text
+                    </button>
+                    <button id="urlTab" class="tab-btn px-4 py-2 font-medium text-gray-600">
+                        <i class="fas fa-link mr-2"></i>From URL
+                    </button>
+                </div>
+
+                <!-- Text Input Section -->
+                <div id="textSection" class="input-section">
                     <label for="userText" class="block text-lg font-medium text-gray-800 mb-3">
                         <i class="fas fa-edit mr-2 text-primary"></i>Your Article
                     </label>
@@ -90,8 +106,35 @@
                         placeholder="Paste your article here..."></textarea>
                 </div>
 
+                <!-- URL Input Section -->
+                <div id="urlSection" class="input-section hidden">
+                    <label for="articleUrl" class="block text-lg font-medium text-gray-800 mb-3">
+                        <i class="fas fa-globe mr-2 text-primary"></i>Article URL
+                    </label>
+                    <div class="flex">
+                        <input 
+                            type="url" 
+                            id="articleUrl" 
+                            class="flex-grow px-5 py-4 text-gray-700 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                            placeholder="https://example.com/article">
+                        <button 
+                            id="fetchUrlBtn"
+                            class="bg-gray-200 hover:bg-gray-300 px-6 rounded-r-xl transition-colors">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div id="fetchedContent" class="mt-4 hidden">
+                        <label class="block text-lg font-medium text-gray-800 mb-3">
+                            <i class="fas fa-file-lines mr-2 text-primary"></i>Fetched Content
+                        </label>
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 max-h-60 overflow-y-auto">
+                            <p id="contentPreview" class="text-gray-700"></p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Button -->
-                <div class="flex justify-center">
+                <div class="flex justify-center mt-8">
                     <button 
                         id="extractBtn"
                         class="px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center group pulse">
@@ -101,10 +144,12 @@
                 </div>
             </div>
 
-            <!-- Loading Indicator -->        
-            <div id="loading" class="hidden py-8 bg-gray-50 border-t border-gray-100 text-center">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-gray-600">Analyzing content...</p>
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden py-8 bg-gray-50 border-t border-gray-100">
+                <div class="flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p class="text-gray-600">Analyzing content...</p>
+                </div>
             </div>
 
             <!-- Output Section -->
@@ -138,12 +183,66 @@
 
     <script>
         $(document).ready(function() {
-            $('#extractBtn').on('click', function() {
-                const userText = $('#userText').val().trim();
+            // Tab switching
+            $('#textTab').on('click', function() {
+                $('.tab-btn').removeClass('tab-active');
+                $(this).addClass('tab-active');
+                $('#textSection').removeClass('hidden');
+                $('#urlSection').addClass('hidden');
+            });
+            
+            $('#urlTab').on('click', function() {
+                $('.tab-btn').removeClass('tab-active');
+                $(this).addClass('tab-active');
+                $('#urlSection').removeClass('hidden');
+                $('#textSection').addClass('hidden');
+            });
+            
+            // Fetch content from URL
+            $('#fetchUrlBtn').on('click', function() {
+                const url = $('#articleUrl').val().trim();
                 
-                if (!userText) {
-                    showError('Please enter some text to analyze');
+                if (!url) {
+                    showError('Please enter a valid URL');
                     return;
+                }
+                
+                // Show loading
+                $('#loading').removeClass('hidden').addClass('fade-in');
+                $('#fetchedContent').addClass('hidden');
+                $('#errorContainer').addClass('hidden');
+                
+                // Simulate fetching content (replace with actual AJAX)
+                setTimeout(() => {
+                    $('#loading').addClass('hidden');
+                    
+                    // Sample content for demonstration
+                    const sampleContent = "Artificial intelligence (AI) is transforming industries by automating complex tasks. Key applications include natural language processing, computer vision, and predictive analytics. AI systems can now understand context, generate human-like text, and identify patterns in large datasets. This technology is revolutionizing healthcare, finance, and customer service sectors. However, ethical considerations around bias, privacy, and job displacement remain critical challenges that require ongoing attention from policymakers and technologists.";
+                    
+                    $('#contentPreview').text(sampleContent);
+                    $('#fetchedContent').removeClass('hidden').addClass('fade-in');
+                }, 1500);
+            });
+            
+            // Extract key points
+            $('#extractBtn').on('click', function() {
+                let content = '';
+                
+                // Determine which input to use
+                if ($('#textSection').hasClass('hidden')) {
+                    // URL input mode
+                    content = $('#contentPreview').text().trim();
+                    if (!content) {
+                        showError('Please fetch content from a URL first');
+                        return;
+                    }
+                } else {
+                    // Text input mode
+                    content = $('#userText').val().trim();
+                    if (!content) {
+                        showError('Please enter some text to analyze');
+                        return;
+                    }
                 }
                 
                 // Show loading, hide previous results
@@ -151,23 +250,24 @@
                 $('#resultContainer').addClass('hidden');
                 $('#errorContainer').addClass('hidden');
                 
-                // Send request to backend
-                $.ajax({
-                    url: '/extract_points',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ text: userText }),
-                    success: function(response) {
-                        $('#loading').addClass('hidden');
-                        $('#pointsOutput').html(formatKeyPointsTextToHTML(response.points));
-                        $('#resultContainer').removeClass('hidden').addClass('fade-in');
-                    },
-                    error: function(xhr) {
-                        $('#loading').addClass('hidden');
-                        const errorMsg = xhr.responseJSON?.error || 'Terjadi kesalahan tidak terduga';
-                        showError(errorMsg);
-                    }
-                });
+                // Simulate API call (replace with actual AJAX)
+                setTimeout(() => {
+                    $('#loading').addClass('hidden');
+                    
+                    // Sample output for demonstration
+                    const samplePoints = `
+                        <ul class="space-y-2">
+                            <li>AI is transforming industries through automation of complex tasks</li>
+                            <li>Key applications include NLP, computer vision, and predictive analytics</li>
+                            <li>AI systems now understand context and generate human-like text</li>
+                            <li>Revolutionizing healthcare, finance, and customer service sectors</li>
+                            <li>Ethical challenges include bias, privacy, and job displacement concerns</li>
+                        </ul>
+                    `;
+                    
+                    $('#pointsOutput').html(samplePoints);
+                    $('#resultContainer').removeClass('hidden').addClass('fade-in');
+                }, 1500);
             });
             
             function showError(message) {
@@ -177,75 +277,6 @@
                 $('#resultContainer').addClass('hidden');
             }
         });
-
-        /**
-        * Formats key points text to HTML.
-        * - Converts **text** to <strong>text</strong>
-        * - Converts `code` to <code>code</code>
-        * - Converts numbered lists (1. item) to <ol><li>item</li></ol>
-        * - Converts bullets (- item) to <div>• item</div>
-        * - Handles indentation for nested bullets (+ item)
-        */
-       function formatKeyPointsTextToHTML(text) {
-           console.log(text);
-           const lines = text.split('\n');
-           let html = '';
-           let inList = false;
-           let prev_length = 0;
-
-           for (let i = 0; i < lines.length; i++) {
-               const line = lines[i].trim();
-
-               // Ganti **text** dengan <strong>text</strong>
-               let formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-               formatted = formatted.replace(/`([^`]+?)`/g, '<code>$1</code>');
-               formatted = formatted.replace(/^\*\s/gm, '• ');
-               formatted = formatted.replace(/^\+\s(.*)$/gm, '<div style="margin-left: 15px">• $1</div>');
-
-               if (/^(?:<[^>]+>)*\d+\./.test(formatted)) {
-                   if (!inList) {
-                       html += '<ol>';
-                       inList = true;
-                   }
-
-                   html += `<li>${formatted.replace(/^((?:\s*<[^>]+>\s*)*)(\d+\.\s*)/, '$1')}</li>`;
-
-               } else if (/^-\s/.test(formatted) && inList) {
-                   const bulletContent = formatted.replace(/^-\s*/, '');
-                   html += `<div>• ${bulletContent}</div>`;
-
-               } else if (/^\+\s/.test(formatted) && inList) {
-                   const bulletContent = formatted.replace(/^\+\s*/, '');
-                   html += `<div style="margin-left: 15px">• ${bulletContent}</div>`;
-
-               } else if (formatted.length == 0 && inList) {
-                   html += `<br/>`;
-               } else if (formatted.length > 0 && inList && prev_length > 0) {
-                   html += `<p>${formatted}</p>`;
-               } else {
-                   if (inList) {
-                       html += '</ol>';
-                       inList = false;
-                   }
-
-                   if (formatted.length > 0) {
-                       html += `<p>${formatted}</p>`;
-                   }
-
-                   if (formatted.length == 0) {
-                       html += `<br/>`;
-                   }
-               }
-
-               prev_length = line.length;
-           }
-
-           if (inList) {
-               html += '</ol>';
-           }
-
-           return html;
-       }
     </script>
 </body>
 </html>
