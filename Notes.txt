@@ -1,0 +1,3 @@
+Tambah logo
+Tambah favicon
+Tambah tombol copy text

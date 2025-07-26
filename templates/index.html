@@ -68,7 +68,7 @@
         <!-- Header -->
         <header class="text-center mb-12 fade-in">
             <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-3">
-                Key Points Extractor
+                📝 Key Points Extractor
             </h1>
             <p class="text-gray-600 max-w-md mx-auto">
                 Transform lengthy articles into concise, actionable insights
@@ -101,12 +101,10 @@
                 </div>
             </div>
 
-            <!-- Loading Indicator -->
-            <div id="loading" class="hidden py-8 bg-gray-50 border-t border-gray-100">
-                <div class="flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
-                    <p class="text-gray-600">Analyzing content...</p>
-                </div>
+            <!-- Loading Indicator -->        
+            <div id="loading" class="hidden py-8 bg-gray-50 border-t border-gray-100 text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+                <p class="mt-2 text-gray-600">Analyzing content...</p>
             </div>
 
             <!-- Output Section -->
@@ -153,24 +151,23 @@
                 $('#resultContainer').addClass('hidden');
                 $('#errorContainer').addClass('hidden');
                 
-                // Simulate API call (replace with actual AJAX)
-                setTimeout(() => {
-                    $('#loading').addClass('hidden');
-                    
-                    // Sample output for demonstration
-                    const samplePoints = `
-                        <ul class="space-y-2">
-                            <li>AI-powered extraction delivers concise summaries in seconds</li>
-                            <li>Natural language processing identifies key concepts automatically</li>
-                            <li>Content is organized into actionable bullet points</li>
-                            <li>Supports multiple languages and complex document structures</li>
-                            <li>Privacy-focused processing with secure data handling</li>
-                        </ul>
-                    `;
-                    
-                    $('#pointsOutput').html(samplePoints);
-                    $('#resultContainer').removeClass('hidden').addClass('fade-in');
-                }, 1500);
+                // Send request to backend
+                $.ajax({
+                    url: '/extract_points',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ text: userText }),
+                    success: function(response) {
+                        $('#loading').addClass('hidden');
+                        $('#pointsOutput').html(formatKeyPointsTextToHTML(response.points));
+                        $('#resultContainer').removeClass('hidden').addClass('fade-in');
+                    },
+                    error: function(xhr) {
+                        $('#loading').addClass('hidden');
+                        const errorMsg = xhr.responseJSON?.error || 'Terjadi kesalahan tidak terduga';
+                        showError(errorMsg);
+                    }
+                });
             });
             
             function showError(message) {
@@ -180,6 +177,75 @@
                 $('#resultContainer').addClass('hidden');
             }
         });
+
+        /**
+        * Formats key points text to HTML.
+        * - Converts **text** to <strong>text</strong>
+        * - Converts `code` to <code>code</code>
+        * - Converts numbered lists (1. item) to <ol><li>item</li></ol>
+        * - Converts bullets (- item) to <div>• item</div>
+        * - Handles indentation for nested bullets (+ item)
+        */
+       function formatKeyPointsTextToHTML(text) {
+           console.log(text);
+           const lines = text.split('\n');
+           let html = '';
+           let inList = false;
+           let prev_length = 0;
+
+           for (let i = 0; i < lines.length; i++) {
+               const line = lines[i].trim();
+
+               // Ganti **text** dengan <strong>text</strong>
+               let formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+               formatted = formatted.replace(/`([^`]+?)`/g, '<code>$1</code>');
+               formatted = formatted.replace(/^\*\s/gm, '• ');
+               formatted = formatted.replace(/^\+\s(.*)$/gm, '<div style="margin-left: 15px">• $1</div>');
+
+               if (/^(?:<[^>]+>)*\d+\./.test(formatted)) {
+                   if (!inList) {
+                       html += '<ol>';
+                       inList = true;
+                   }
+
+                   html += `<li>${formatted.replace(/^((?:\s*<[^>]+>\s*)*)(\d+\.\s*)/, '$1')}</li>`;
+
+               } else if (/^-\s/.test(formatted) && inList) {
+                   const bulletContent = formatted.replace(/^-\s*/, '');
+                   html += `<div>• ${bulletContent}</div>`;
+
+               } else if (/^\+\s/.test(formatted) && inList) {
+                   const bulletContent = formatted.replace(/^\+\s*/, '');
+                   html += `<div style="margin-left: 15px">• ${bulletContent}</div>`;
+
+               } else if (formatted.length == 0 && inList) {
+                   html += `<br/>`;
+               } else if (formatted.length > 0 && inList && prev_length > 0) {
+                   html += `<p>${formatted}</p>`;
+               } else {
+                   if (inList) {
+                       html += '</ol>';
+                       inList = false;
+                   }
+
+                   if (formatted.length > 0) {
+                       html += `<p>${formatted}</p>`;
+                   }
+
+                   if (formatted.length == 0) {
+                       html += `<br/>`;
+                   }
+               }
+
+               prev_length = line.length;
+           }
+
+           if (inList) {
+               html += '</ol>';
+           }
+
+           return html;
+       }
     </script>
 </body>
 </html>
