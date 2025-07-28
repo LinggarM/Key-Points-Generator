@@ -267,22 +267,43 @@
                 $('#loading').removeClass('hidden').addClass('fade-in');
                 $('#fetchedContent').addClass('hidden');
                 $('#errorContainer').addClass('hidden');
-                
-                // Simulate fetching content (replace with actual AJAX)
-                setTimeout(() => {
-                    $('#loading').addClass('hidden');
-                    
-                    // Sample content for demonstration
-                    const sampleContent = "Artificial intelligence (AI) is transforming industries by automating complex tasks. Key applications include natural language processing, computer vision, and predictive analytics. AI systems can now understand context, generate human-like text, and identify patterns in large datasets. This technology is revolutionizing healthcare, finance, and customer service sectors. However, ethical considerations around bias, privacy, and job displacement remain critical challenges that require ongoing attention from policymakers and technologists.";
-                    
-                    $('#contentPreview').text(sampleContent);
-                    $('#fetchedContent').removeClass('hidden').addClass('fade-in');
-                }, 1500);
+
+                fetch('/extract_url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                })
+                .then(response => response.json())
+                .then(data => {                    
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        $('#loading').addClass('hidden');
+
+                        $('#contentPreview').text(data.content);
+                        $('#fetchedContent').removeClass('hidden').addClass('fade-in');
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                });
             });
 
             // Extract key points
             $('#extractBtn').on('click', function () {
-                const userText = $('#userText').val().trim();
+                let activeTab = $('.tab-active');
+                let idActiveTab = activeTab.attr('id');
+                let userText = '';
+
+                if (idActiveTab == 'textTab') {
+                    userText = $('#userText').val().trim();
+                } else if (idActiveTab == 'urlTab') {
+                    userText = $('#contentPreview').text().trim();
+                }
+                console.log(userText);
+                
                 if (!userText) {
                     showError('Please enter some text to analyze');
                     return;
