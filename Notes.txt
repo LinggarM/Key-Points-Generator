@@ -1,0 +1,4 @@
+Ganti nama folder & repo jadi Key Points Extractor
+Add by youtube video
+Update requirements
+Add Readme

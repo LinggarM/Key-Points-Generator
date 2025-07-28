@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import requests
+import json
 import os
 from dotenv import load_dotenv
 
@@ -22,22 +23,25 @@ def extract_points():
         
         if not user_text:
             return jsonify({'error': 'No text provided'}), 400
-            
-        prompt = f"beri poin penting: {user_text}"
         
         headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {GROQ_API_KEY}"
         }
         
-        payload = {
-            "model": "llama3-8b-8192",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.5,
-            "max_tokens": 500
+        content = f"beri poin penting: {user_text}"
+        
+        data = {
+            "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": content
+                }
+            ]
         }
         
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+        response = requests.post(GROQ_API_URL, headers=headers, data=json.dumps(data), timeout=30)
         response.raise_for_status()
         
         ai_response = response.json()
